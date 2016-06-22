@@ -1,0 +1,20 @@
+Source: audisp-tacplus
+Section: admin
+Priority: optional
+Maintainer: devsupport <devsupport@cumulusnetworks.com>
+Build-Depends: debhelper (>= 9), autotools-dev, autoconf, libpam-tacplus-dev, libtac-dev,
+	libsimple-tacacct-dev, libaudit-dev, libauparse-dev, libtacplus-map-dev,
+	dpkg-dev (>= 1.16.1~)
+Standards-Version: 3.9.6
+Homepage: http://www.cumulusnetworks.com
+
+Package: audisp-tacplus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libpam-tacplus, libtac2,
+	libtacplus-map1, libsimple-tacacct1, libauparse0, libaudit1, auditd
+Description: audisp module for TACACS+ accounting
+	This audisp module has is designed to do TACACS+ accounting.
+	It was written to work with a modified version of pam_tacplus.
+	It requires the libpam-tacplus plugin with TACACS+ mapped user
+	support, and the libsimple-tacacct package to handle the 
+	communications with the TACACS+ server

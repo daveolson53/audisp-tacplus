@@ -1,0 +1,46 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2015, 2016 Cumulus Networks, Inc
+.TH AUDISP-TACPLUS 8 "June 22, 2016"
+.\" Please adjust this date whenever revising the manpage.
+.SH NAME
+audisp-tacplus \- sending tacacs accounting records to tacacs server
+.SH SYNOPSIS
+.B audisp-tacplus
+.RI [ config-file ]
+.SH DESCRIPTION
+.B audisp-tacplus
+is an
+.I audisp plugin
+to the
+.I auditd
+system.  It is started automatically by
+.I audisp
+when auditd is started, normally at system boot.
+.PP
+.SH OPTIONS
+The optional
+.I config-file
+argument specifies an alternate configuration file.
+The argument must be placed in the
+.I  /etc/audisp/plugins.d/audisp-tacplus.conf
+configuration file, as the
+.B args
+string value.
+.SH FILES
+.IR  /etc/audisp/plugins.d/audisp-tacplus.conf --
+configuration for the plugin itself
+.br
+.IR  /etc/audisp/plugins.d/audisp-tacplus.rules --
+.I auditd
+rules loaded via the
+.I /etc/init.d/audisp-tacplus
+startup file.  If auditd is restarted with the
+.BR service ,\  invoke-rc.d
+or similar commands, audisp-tacplus should also be restarted, to
+reload the audit rules for tacplus
+.br
+.IR  /etc/audisp/audisp-tac_plus.conf --
+TACACS+ configuration file
+.SH SEE ALSO
+.BR auditd (8),
+.BR audispd (8).
