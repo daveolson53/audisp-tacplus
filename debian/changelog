@@ -1,9 +1,6 @@
-audisp-tacplus (1.0.0-1) unstable; urgency=low
+audisp-tacplus (1.0.0) UNRELEASED; urgency=low
 
   * Initial release of audisp plugin to do TACACS+ accounting.
-    It has multiple configuration files, but typically they will work out of
-    of the box.   This plugin uses the libsimple-tacct library to communicate
-    with the TACACS+ server.  It also requires libtacplus_map library to lookup
-    TACACS+ mapping.  Accounting is done on the login_auid and sessionid fields.
+    Accounting is done on the login_auid and sessionid fields.
 
- -- Dave Olson <olson@cumulusnetworks.com>  Wed, 22 Jun 2016 15:29:28 -0700
+ -- Dave Olson <olson@cumulusnetworks.com>  Thu, 25 Aug 2016 10:31:13 -0700

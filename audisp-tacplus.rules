@@ -31,17 +31,17 @@
 # reduce the growth of the audit log.  EXECVE is needed in order to get the args
 # to the exec syscall so we can send them to accounting.
 
-# -a exclude,always -F msgtype=CRED_ACQ
-# -a exclude,always -F msgtype=CRED_DISP
-# -a exclude,always -F msgtype=CRED_REFR
-# -a exclude,always -F msgtype=CWD
-# -a exclude,always -F msgtype=LOGIN
-# -a exclude,always -F msgtype=PATH
-# -a exclude,always -F msgtype=PROCTITLE
-# -a exclude,always -F msgtype=SERVICE_START
-# -a exclude,always -F msgtype=SERVICE_STOP
-# -a exclude,always -F msgtype=USER_ACCT
-# -a exclude,always -F msgtype=USER_AUTH
-# -a exclude,always -F msgtype=USER_CMD
-# -a exclude,always -F msgtype=USER_END
-# -a exclude,always -F msgtype=USER_START
+-a exclude,always -F msgtype=CRED_ACQ
+-a exclude,always -F msgtype=CRED_DISP
+-a exclude,always -F msgtype=CRED_REFR
+-a exclude,always -F msgtype=CWD
+-a exclude,always -F msgtype=LOGIN
+-a exclude,always -F msgtype=PATH
+-a exclude,always -F msgtype=PROCTITLE
+-a exclude,always -F msgtype=SERVICE_START
+-a exclude,always -F msgtype=SERVICE_STOP
+-a exclude,always -F msgtype=USER_ACCT
+-a exclude,always -F msgtype=USER_AUTH
+-a exclude,always -F msgtype=USER_CMD
+-a exclude,always -F msgtype=USER_END
+-a exclude,always -F msgtype=USER_START

@@ -1,9 +1,11 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: audisp-tacplus
-Source: <http://www.OLSONcumulusnetworks.com>
+Source: https://github.com/daveolson53/audisp_tacplus
 
 Files: *
-Copyright: 2015 Cumulus Networks, Inc
+Copyright: 2010 Pawel Krawczyk <pawel.krawczyk@hush.com> and Jeroen Nijhof <jeroen@jeroennijhof.nl>.,
+           2012 Red Hat Inc,
+           2015, 2016 Cumulus Networks, Inc.
 License: GPL-2+
 
 License: GPL-2+
