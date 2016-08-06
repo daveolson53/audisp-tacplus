@@ -1,4 +1,4 @@
-audisp-tacplus (1.0.0-cl3u1) unstable; urgency=low
+audisp-tacplus (1.0.0-cl3eau1) UNRELEASED; urgency=low
 
   * Initial release of audisp plugin to do TACACS+ accounting.
     Accounting is done on the login_auid and sessionid fields.
