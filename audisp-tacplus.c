@@ -650,32 +650,23 @@ static void get_acct_record(auparse_state_t *au, int type)
         }
     }
 
-    /*
+    /* 
      * Put exit status after command name, the argument to exit is in a0
      * for exit syscall; duplicates part of arg loop below
      * This won't ever happen for processes that terminate on signals,
      * including SIGSEGV, unfortunately.  ANOM_ABEND would be perfect,
-     * but it doesn't always happen, at least in jessie.
+     * but it doesn't happen at least in jessie.
      */
     if(acct_type == TAC_PLUS_ACCT_FLAG_STOP && argc == 0) {
-        llen = 0;
-        if(get_field(au, "a0")) {
+        if(get_field(au, "a0")) { /* should always be true */
             llen = snprintf(logptr, sizeof logbuf - tlen,
                 " exit=%d", auparse_get_field_int(au));
+            logptr += llen;
+            tlen += llen;
         }
-        else if(get_auval(au, "sig", &val)) {
-            llen = snprintf(logptr, sizeof logbuf - tlen,
-                " exitsig=%d", (int)val);
-        }
-        logptr += llen;
-        tlen += llen;
     }
 
-    /*
-     * loguser is always set, we bail if not.  For ANOM_ABEND, tty may be
-     *  unknown, and in some cases, host may be not be set.
-     */
-    send_tacacs_acct(loguser, tty?tty:"UNK", host?host:"UNK", logbase, acct_type, taskno);
+    send_tacacs_acct(loguser, tty, host?host:"UNK", logbase, acct_type, taskno);
 
     if(host)
         free(host);
