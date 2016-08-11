@@ -496,9 +496,10 @@ static void get_acct_record(auparse_state_t *au)
      */
     logbase = logptr = logbuf;
     tlen =  0;
+
     if(cmd) {
         i = 1; /* don't need argv[0], show full executable */
-        llen = snprintf(logbuf, sizeof logbuf, "%s", cmd);
+        llen = snprintf(logptr, sizeof logbuf - tlen, "%s", cmd);
         if(llen >= sizeof logbuf) {
             llen = sizeof logbuf - 1;
         }
@@ -507,8 +508,8 @@ static void get_acct_record(auparse_state_t *au)
     }
     else
         i = 0; /* show argv[0] */
-    char anum[13];
     for(; i<argc && tlen < sizeof logbuf; i++) {
+        char anum[13];
         snprintf(anum, sizeof anum, "a%u", i);
         if(get_field(au, anum)) { /* should always be true */
             llen = snprintf(logptr, sizeof logbuf - tlen,
@@ -517,6 +518,22 @@ static void get_acct_record(auparse_state_t *au)
                 llen = sizeof logbuf - tlen;
                 break;
             }
+            logptr += llen;
+            tlen += llen;
+        }
+    }
+
+    /* 
+     * Put exit status after command name, the argument to exit is in a0
+     * for exit syscall; duplicates part of arg loop below
+     * This won't ever happen for processes that terminate on signals,
+     * including SIGSEGV, unfortunately.  ANOM_ABEND would be perfect,
+     * but it doesn't happen at least in jessie.
+     */
+    if(acct_type == TAC_PLUS_ACCT_FLAG_STOP && argc == 0) {
+        if(get_field(au, "a0")) { /* should always be true */
+            llen = snprintf(logptr, sizeof logbuf - tlen,
+                " exit=%d", auparse_get_field_int(au));
             logptr += llen;
             tlen += llen;
         }

@@ -41,6 +41,11 @@ reload the audit rules for tacplus
 .br
 .IR  /etc/audisp/audisp-tac_plus.conf --
 TACACS+ configuration file
+.SH LIMITATION
+The linux auditd system does not general audit events for processes that
+are terminated with a signal (via the kill system call or internal errors
+such as SIGSEGV). As a result, processes that exit on a signal that isn't caught and
+handled will not generate a STOP accounting record.
 .SH SEE ALSO
 .BR auditd (8),
 .BR audispd (8).
