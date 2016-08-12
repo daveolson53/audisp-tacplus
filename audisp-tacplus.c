@@ -256,7 +256,12 @@ main(int argc, char *argv[])
 			reload_config();
 		}
 
-		/* Now the event loop */
+		/*
+		 * Now the event loop.  For some reason, audisp doesn't send
+		 * us the ANOM_ABEND until flushed by another event. and it
+		 * therefore has the timestamp of the next event.  I can't find
+		 * any parameters to affect that.
+		 */
 		while(fgets_unlocked(tmp, MAX_AUDIT_MESSAGE_LENGTH, stdin) &&
 							hup==0 && stop==0) {
 			auparse_feed(au, tmp, strnlen(tmp,
@@ -278,7 +283,7 @@ int
 send_acct_msg(int tac_fd, int type, char *user, char *tty, char *host,
     char *cmd, uint16_t taskid)
 {
-    char buf[64];
+    char buf[128];
     struct tac_attrib *attr;
     int retval;
     struct areply re;
@@ -396,7 +401,7 @@ get_auval(auparse_state_t *au, const char *field, int *val)
  * is 255 characters, and some of the accounting doesn't seem to work
  * if right at full length.
  */
-static void get_acct_record(auparse_state_t *au)
+static void get_acct_record(auparse_state_t *au, int type)
 {
     int val, i, llen, tlen, freeloguser=0;
     int acct_type;
@@ -415,6 +420,9 @@ static void get_acct_record(auparse_state_t *au)
         acct_type = TAC_PLUS_ACCT_FLAG_START;
     }
     else if(ausyscall && !strncmp(ausyscall, "exit", 4)) {
+        acct_type = TAC_PLUS_ACCT_FLAG_STOP;
+    }
+    else if(type == AUDIT_ANOM_ABEND) {
         acct_type = TAC_PLUS_ACCT_FLAG_STOP;
     }
     else /* not a system call we care about */
@@ -528,18 +536,27 @@ static void get_acct_record(auparse_state_t *au)
      * for exit syscall; duplicates part of arg loop below
      * This won't ever happen for processes that terminate on signals,
      * including SIGSEGV, unfortunately.  ANOM_ABEND would be perfect,
-     * but it doesn't happen at least in jessie.
+     * but it doesn't always happen, at least in jessie.
      */
     if(acct_type == TAC_PLUS_ACCT_FLAG_STOP && argc == 0) {
-        if(get_field(au, "a0")) { /* should always be true */
+        llen = 0;
+        if(get_field(au, "a0")) {
             llen = snprintf(logptr, sizeof logbuf - tlen,
                 " exit=%d", auparse_get_field_int(au));
-            logptr += llen;
-            tlen += llen;
         }
+        else if(get_auval(au, "sig", &val)) {
+            llen = snprintf(logptr, sizeof logbuf - tlen,
+                " exitsig=%d", (int)val);
+        }
+        logptr += llen;
+        tlen += llen;
     }
 
-    send_tacacs_acct(loguser, tty, host?host:"UNK", logbase, acct_type, taskno);
+    /* 
+     * loguser is always set, we bail if not.  For ANOM_ABEND, tty may be
+     *  unknown, and in some cases, host may be not be set.
+     */
+    send_tacacs_acct(loguser, tty?tty:"UNK", host?host:"UNK", logbase, acct_type, taskno);
 
     if(host)
         free(host);
@@ -548,35 +565,39 @@ static void get_acct_record(auparse_state_t *au)
         free(loguser);
 }
 
-/* This function receives a single complete event at a time from the auparse
- * library. This is where the main analysis code would be added. */
+/*
+ * This function receives a single complete event at a time from the auparse
+ * library. This is where the main analysis code would be added.
+ */
 static void
-handle_event(auparse_state_t *au,
-		auparse_cb_event_t cb_event_type,
-        void *user_data __attribute__ ((unused)))
+handle_event(auparse_state_t *au, auparse_cb_event_t cb_event_type,
+             void *user_data __attribute__ ((unused)))
 {
-	int type, num=0;
+    int type, num=0;
 
-	if(cb_event_type != AUPARSE_CB_EVENT_READY) {
-		return;
+    if(cb_event_type != AUPARSE_CB_EVENT_READY) {
+	    return;
     }
 
-	/* Loop through the records in the event looking for one to process.
-	   We use physical record number because we may search around and
-	   move the cursor accidentally skipping a record. */
-	while(auparse_goto_record_num(au, num) > 0) {
-		type = auparse_get_type(au);
-        /* we are only writing TACACS account records for syslog exec
-         * records.  login, etc. are handled through pam_tacplus
-         */
-		switch(type) {
-			case AUDIT_SYSCALL:
-                get_acct_record(au);
-				// for doublechecking dump_whole_record(au); 
-				break;
-			default:
-				break;
-		}
-		num++;
+    /* Loop through the records in the event looking for one to process.
+     * We use physical record number because we may search around and
+     * move the cursor accidentally skipping a record.
+     */
+    while(auparse_goto_record_num(au, num) > 0) {
+	type = auparse_get_type(au);
+	/*
+	 * we are only writing TACACS account records for syslog exec
+	 * records.  login, etc. are handled through pam_tacplus
+	 */
+	switch(type) {
+	    case AUDIT_SYSCALL:
+	    case AUDIT_ANOM_ABEND:
+		get_acct_record(au, type);
+		break;
+	    default:
+		// for doublechecking dump_whole_record(au); 
+		break;
 	}
+	num++;
+    }
 }
