@@ -358,7 +358,7 @@ main(int argc, char *argv[])
 		 * therefore has the timestamp of the next event.  I can't find
 		 * any parameters to affect that.
 		 */
-		while(fgets(tmp, MAX_AUDIT_MESSAGE_LENGTH, stdin) &&
+		while(fgets_unlocked(tmp, MAX_AUDIT_MESSAGE_LENGTH, stdin) &&
 							hup==0 && stop==0) {
 			auparse_feed(au, tmp, strnlen(tmp,
 						MAX_AUDIT_MESSAGE_LENGTH));
@@ -655,18 +655,27 @@ static void get_acct_record(auparse_state_t *au, int type)
      * for exit syscall; duplicates part of arg loop below
      * This won't ever happen for processes that terminate on signals,
      * including SIGSEGV, unfortunately.  ANOM_ABEND would be perfect,
-     * but it doesn't happen at least in jessie.
+     * but it doesn't always happen, at least in jessie.
      */
     if(acct_type == TAC_PLUS_ACCT_FLAG_STOP && argc == 0) {
-        if(get_field(au, "a0")) { /* should always be true */
+        llen = 0;
+        if(get_field(au, "a0")) {
             llen = snprintf(logptr, sizeof logbuf - tlen,
                 " exit=%d", auparse_get_field_int(au));
-            logptr += llen;
-            tlen += llen;
         }
+        else if(get_auval(au, "sig", &val)) {
+            llen = snprintf(logptr, sizeof logbuf - tlen,
+                " exitsig=%d", (int)val);
+        }
+        logptr += llen;
+        tlen += llen;
     }
 
-    send_tacacs_acct(loguser, tty, host?host:"UNK", logbase, acct_type, taskno);
+    /* 
+     * loguser is always set, we bail if not.  For ANOM_ABEND, tty may be
+     *  unknown, and in some cases, host may be not be set.
+     */
+    send_tacacs_acct(loguser, tty?tty:"UNK", host?host:"UNK", logbase, acct_type, taskno);
 
     if(host)
         free(host);
@@ -705,7 +714,7 @@ handle_event(auparse_state_t *au, auparse_cb_event_t cb_event_type,
 		get_acct_record(au, type);
 		break;
 	    default:
-		// for doublechecking dump_whole_record(au);
+		// for doublechecking dump_whole_record(au); 
 		break;
 	}
 	num++;
