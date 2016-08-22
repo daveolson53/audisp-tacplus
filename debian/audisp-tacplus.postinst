@@ -7,6 +7,14 @@ set -e
 
 case "$1" in
     configure)
+        # If not 64bit, comment out arch=b64; auditctl errors out on arch=b64
+        (set +e
+        file -L /bin/sh | grep -q 32-bit
+        if [ $? -eq 0 ]; then
+            sed -i '/^-a.*arch=b64/s/^/# No 64bit support /' \
+              /etc/audit/rules.d/audisp-tacplus.rules
+        fi
+        exit 0)
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
