@@ -15,11 +15,11 @@ esac
 # if auditd is running, then restart it, since our plugin
 # is no longer installed.
 
+augenrules # generate a new /etc/audit/auditd.rules after our rules are removed
+
 # restart auditd if running, so new rules take effect
 deb-systemd-invoke status auditd > /dev/null &&
     deb-systemd-invoke restart auditd >/dev/null || true
-
-augenrules # generate a new /etc/audit/auditd.rules if needed after removal
 
 #DEBHELPER#
 
