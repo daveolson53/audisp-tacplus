@@ -1,3 +1,9 @@
+audisp-tacplus (1.0.0-cl3eau2) UNRELEASED; urgency=low
+
+  * Regenerate audit rules before restarting auditd on removal
+
+ -- dev-support <dev-support@cumulusnetworks.com>  Thu, 25 Aug 2016 10:31:13 -0700
+
 audisp-tacplus (1.0.0-cl3eau1) UNRELEASED; urgency=low
 
   * Initial release of audisp plugin to do TACACS+ accounting.
