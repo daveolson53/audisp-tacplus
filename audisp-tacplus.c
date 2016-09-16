@@ -97,7 +97,7 @@ typedef struct {
 
 /* set from configuration file parsing */
 static tacplus_server_t tac_srv[TAC_PLUS_MAXSERVERS];
-static unsigned tac_srv_no;
+static int tac_srv_no, tac_key_no;
 static char tac_service[64];
 static char tac_protocol[64];
 static int debug = 0;
@@ -109,7 +109,6 @@ static void
 audisp_tacplus_config(char *cfile, int level)
 {
     FILE *conf;
-    int tac_key_no = 0;
     char lbuf[256];
 
     conf = fopen(cfile, "r");
