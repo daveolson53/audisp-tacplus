@@ -1,3 +1,10 @@
+audisp-tacplus (1.0.0-cl3eau3) UNRELEASED; urgency=low
+
+  *  CM-12880: When recursing into an included config, don't reset
+     secret key index
+    
+ -- dev-support <dev-support@cumulusnetworks.com>  Thu, 06 Oct 2016 15:05:19 -0700
+
 audisp-tacplus (1.0.0-cl3eau2) UNRELEASED; urgency=low
 
   * Regenerate audit rules before restarting auditd on removal
