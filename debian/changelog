@@ -2,8 +2,10 @@ audisp-tacplus (1.0.0-cl3eau3) UNRELEASED; urgency=low
 
   *  CM-12880: When recursing into an included config, don't reset
      secret key index
+  *  CM-13348: Fixed to run when management network is in a vrf.  New config
+     file item "vrf" to set vrf name.  Documented configuration file in man page
     
- -- dev-support <dev-support@cumulusnetworks.com>  Thu, 06 Oct 2016 15:05:19 -0700
+ -- dev-support <dev-support@cumulusnetworks.com>  Wed, 02 Nov 2016 13:59:07 -0700
 
 audisp-tacplus (1.0.0-cl3eau2) UNRELEASED; urgency=low
 
