@@ -3,9 +3,9 @@ Upstream-Name: audisp-tacplus
 Source: https://github.com/daveolson53/audisp_tacplus
 
 Files: *
-Copyright: 2010 Pawel Krawczyk <pawel.krawczyk@hush.com> and Jeroen Nijhof <jeroen@jeroennijhof.nl>.,
-           2012 Red Hat Inc,
-           2015, 2016 Cumulus Networks, Inc.
+Copyright: 2015, 2016 Cumulus Networks, Inc.  All rights reserved.,
+           2010 Pawel Krawczyk <pawel.krawczyk@hush.com> and Jeroen Nijhof <jeroen@jeroennijhof.nl>.,
+           2012 Red Hat Inc
 License: GPL-2+
 
 License: GPL-2+
