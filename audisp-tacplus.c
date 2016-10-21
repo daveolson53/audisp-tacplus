@@ -265,7 +265,7 @@ reload_config(void)
     audisp_tacplus_config(configfile, 0);
 }
 
-/*
+/* 
  * Check to see if we should run under vrf context for management network.
  * If set, configure us to do so.
  * Report errors through syslog, but void, because all we can do is keep
