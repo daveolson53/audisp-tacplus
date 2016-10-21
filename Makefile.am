@@ -1,4 +1,4 @@
-#  Copyright 2014, 2015, 2016 by Cumulus Networks, Inc.
+#  Copyright 2014, 2015, 2016 by Cumulus Networks, Inc.  All rights reserved.
 #  Dave Olson <olson@cumulusnetworks.com>
 
 EXTRA_DIST = ChangeLog README audisp_tacplus.spec \
