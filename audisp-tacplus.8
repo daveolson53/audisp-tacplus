@@ -26,21 +26,72 @@ The argument must be placed in the
 configuration file, as the
 .B args
 string value.
+.SH SIGNALS
+When sent SIGHUP,
+.I audisp-tacplus
+will reset all configuration to default, and re-read the
+.I /etc/audisp/audisp-tac_plus.conf
+configuration file.
+.P
+When sent SIGTERM,
+.I audisp-tacplus
+will terminate it's event loop and exit cleanly.
 .SH FILES
 .IR  /etc/audisp/plugins.d/audisp-tacplus.conf --
-configuration for the plugin itself
+audisp plugin configuration for the plugin
 .br
 .IR  /etc/audisp/plugins.d/audisp-tacplus.rules --
 .I auditd
 rules loaded via the
 .I /etc/init.d/audisp-tacplus
 startup file.  If auditd is restarted with the
-.BR service ,\  invoke-rc.d
-or similar commands, audisp-tacplus should also be restarted, to
-reload the audit rules for tacplus
+.BR service ,\  invoke-rc.d ,\  systemctl
+or similar commands, audisp-tacplus will normally be automatically restarted
+as well.
 .br
 .IR  /etc/audisp/audisp-tac_plus.conf --
-TACACS+ configuration file
+TACACS+ configuration file.  By default, this includes the
+.I  /etc/tacplus_servers
+file to get the list of TACACS+ servers and their keys, to simplify
+configuration.
+The
+.I  /etc/tacplus_servers
+file is normally installed as part of the
+libpam-tacplus package.   See the documentation for that package
+for the format.  libpam-tacplus is not required for this command
+to function correctly.
+.P
+The
+.I  /etc/audisp/audisp-tac_plus.conf
+file can be used to set options specific to the accounting
+or to override settings in
+.I  /etc/tacplus_servers
+for the accounting plugin.
+The following variables are used:
+.br
+.IP debug 16
+Enables debugging
+.br
+.IP secret=STRING 16
+shared secret for the TACACS+ server encryption (may be given multiple times)
+.br
+.IP server=IP_ADDR 16
+TACACS+ server IP address (may be given multiple times)
+.br
+.IP acct=all 16
+Send accounting information to all available TACACS+ servers.  Without this
+option, accounting information is sent only to the first responding server.
+.br
+.IP vrf=vrfname 16
+If the management network is in a vrf, set this variable to the vrf name.
+This would usually be "mgmt"
+When this variable is set, the connection to the TACACS+ accounting servers
+will be made through the named vrf.
+.br
+.IP service=shell 16
+The service type used for accounting messages to the TACACS+ servers.
+It is recommended that you don't change this default
+.P
 .SH LIMITATION
 The linux auditd system does not always generate audit events for processes that
 are terminated with a signal (via the kill system call or internal errors

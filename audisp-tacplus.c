@@ -43,6 +43,8 @@
 
 #define _GNU_SOURCE
 
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
@@ -65,6 +67,7 @@
 static volatile int stop = 0;
 static volatile int hup = 0;
 static auparse_state_t *au = NULL;
+static unsigned connected_ok;
 
 char *configfile = "/etc/audisp/audisp-tac_plus.conf";
 
@@ -92,7 +95,7 @@ hup_handler(int sig __attribute__ ((unused)))
 
 typedef struct {
     struct addrinfo *addr;
-    const char *key;
+    char *key;
 } tacplus_server_t;
 
 /* set from configuration file parsing */
@@ -100,6 +103,7 @@ static tacplus_server_t tac_srv[TAC_PLUS_MAXSERVERS];
 static int tac_srv_no, tac_key_no;
 static char tac_service[64];
 static char tac_protocol[64];
+static char vrfname[64];
 static int debug = 0;
 static int acct_all; /* send accounting to all servers, not just 1st */
 
@@ -134,6 +138,8 @@ audisp_tacplus_config(char *cfile, int level)
             debug = strtoul(lbuf+6, NULL, 0);
         else if(!strncmp(lbuf, "acct_all=", 9))
             acct_all = strtoul(lbuf+9, NULL, 0);
+        else if(!strncmp(lbuf, "vrf=", 4))
+            tac_xstrcpy(vrfname, lbuf + 4, sizeof(vrfname));
         else if(!strncmp(lbuf, "service=", 8))
             tac_xstrcpy(tac_service, lbuf + 8, sizeof(tac_service));
         else if(!strncmp(lbuf, "protocol=", 9))
@@ -218,8 +224,85 @@ audisp_tacplus_config(char *cfile, int level)
 static void
 reload_config(void)
 {
-	hup = 0;
+    int i;
+
+    hup = 0;
+
+    /*  reset the config variables that we use, freeing memory where needed */
+    vrfname[0] = '\0';
+    tac_service[0] = '\0';
+    tac_protocol[0] = '\0';
+    tac_login[0] = '\0';
+    debug = 0;
+    acct_all = 0;
+
+    for(i = 0; i < tac_srv_no; i++) {
+        if(tac_srv[i].key) {
+            free(tac_srv[i].key);
+            tac_srv[i].key = NULL;
+        }
+        tac_srv[i].addr = NULL;
+    }
+    tac_srv_no = 0;
+    tac_key_no = 0;
+
+    connected_ok = 0; /*  reset connected state (for possible vrf) */
+
     audisp_tacplus_config(configfile, 0);
+}
+
+/* 
+ * Check to see if we should run under vrf context for management network.
+ * If set, configure us to do so.
+ * Report errors through syslog, but void, because all we can do is keep
+ * going and hope things work out, or the logged error messages help
+ * the user debug the problem.
+ */
+static void
+set_vrf(void)
+{
+    pid_t pid, childpid;
+    int ret, status = -1;
+    char mypidstr[16];
+
+    if(!*vrfname)
+        return;
+    if(debug)
+        syslog(LOG_NOTICE, "%s: Enabling vrf: %s", progname, vrfname);
+    pid = getpid();
+    if (pid == (pid_t)-1) {
+        syslog(LOG_ERR, "%s: Unable to get my PID to set vrf %s: %m", progname,
+            vrfname);
+        return;
+    }
+    snprintf(mypidstr, sizeof mypidstr, "%d", pid);
+    childpid = fork();
+    if (childpid == (pid_t)-1) {
+        syslog(LOG_ERR, "%s: Unable to fork to set vrf %s: %m", progname,
+            vrfname);
+        return;
+    }
+    else if(!childpid) {
+        execl("/usr/bin/vrf", "vrf", "task", "set", vrfname, mypidstr,
+            (char *)NULL);
+        /*  just in case the command moves */
+        execlp("vrf", "vrf", "task", "set", vrfname, mypidstr, (char *)NULL);
+        syslog(LOG_ERR, "%s: Unable to exec vrf command to set vrf %s: %m",
+            progname, vrfname);
+        exit(1);
+    }
+    ret = waitpid(childpid, &status, 0);
+    if(ret == -1)
+        syslog(LOG_ERR, "%s: Failed to wait for exec'ed vrf command: %m",
+            progname);
+    else if(ret && ret != childpid) {
+        syslog(LOG_WARNING, "%s: Wait for exec'ed vrf command pid %d unexpectedly"
+            " returned %d", progname, childpid, ret);
+        (void)waitpid(childpid, &status, WNOHANG); /*  give it one more chance */
+    }
+    if (status != -1 && status)
+        syslog(LOG_WARNING, "%s: exec'ed vrf command exited with status 0x%x",
+            progname, status);
 }
 
 int
@@ -328,14 +411,29 @@ static void
 send_tacacs_acct(char *user, char *tty, char *host, char *cmdmsg, int type,
     uint16_t task_id)
 {
-    int retval, srv_i, srv_fd;
+    int retval, srv_i, srv_fd, anyok = 0, tries = 0;
 
+    /*
+     *  We start well before networking, so if in a vrf, we may not be
+     *  able to set it when we first start up.  In theory, we won't be
+     *  doing any accounting until a TACACS-authenticated user logs in
+     *  after networking is up, so defer setting up the vrf until we
+     *  try to connect to a TACACS+ server.  Just in case, keep trying
+     *  until we have a successful connection, just in case.
+     *  We also need to redo this if we were SIGHUP'ed to re-read the
+     *  config.
+     */
+retry:
+    if(!connected_ok)
+        set_vrf();
+    tries++;
     for(srv_i = 0; srv_i < tac_srv_no; srv_i++) {
         srv_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key,
             NULL);
-        if(srv_fd == -1) {
-            syslog(LOG_WARNING, "error connecting to %s send acct record: %m",
-                tac_ntop(tac_srv[srv_i].addr->ai_addr));
+        if(srv_fd < 0) {
+            syslog(LOG_WARNING, "connection to %s failed (%d) to send"
+                " accounting record: %m",
+                tac_ntop(tac_srv[srv_i].addr->ai_addr), srv_fd);
             continue;
         }
         retval = send_acct_msg(srv_fd, type, user, tty, host, cmdmsg, task_id);
@@ -343,8 +441,17 @@ send_tacacs_acct(char *user, char *tty, char *host, char *cmdmsg, int type,
             syslog(LOG_WARNING, "error sending accounting record to %s: %m",
                 tac_ntop(tac_srv[srv_i].addr->ai_addr));
         close(srv_fd);
-        if(!retval && !acct_all)
-            break; /* only send to first responding server */
+        if(!retval) {
+            connected_ok = 1;
+            anyok++;
+            if(!acct_all)
+                break; /* only send to first responding server */
+        }
+    }
+    if (!anyok && connected_ok && vrfname[0] && tries == 1) {
+        syslog(LOG_WARNING, "Lost network connection, reinitializing vrf");
+        connected_ok = 0;
+        goto retry;
     }
 }
 
