@@ -35,7 +35,7 @@
  *   ausearch --start today --raw > test.log
  *   ./audisp-tacplus < test.log
  *
- * Excluding some init/destroy items you might need to add to main, the 
+ * Excluding some init/destroy items you might need to add to main, the
  * event_handler function is the main place that you would modify to do
  * things specific to your plugin.
  *
@@ -118,7 +118,7 @@ audisp_tacplus_config(char *cfile, int level)
     conf = fopen(cfile, "r");
     if(conf == NULL) {
         syslog(LOG_WARNING, "%s: can't open config file %s: %m",
-            progname, cfile); 
+            progname, cfile);
         return;
     }
 
@@ -134,7 +134,7 @@ audisp_tacplus_config(char *cfile, int level)
             if(lbuf[8]) /* else treat as empty config */
                 audisp_tacplus_config(&lbuf[8], level+1);
         }
-        else if(!strncmp(lbuf, "debug=", 6)) 
+        else if(!strncmp(lbuf, "debug=", 6))
             debug = strtoul(lbuf+6, NULL, 0);
         else if(!strncmp(lbuf, "acct_all=", 9))
             acct_all = strtoul(lbuf+9, NULL, 0);
@@ -146,7 +146,6 @@ audisp_tacplus_config(char *cfile, int level)
             tac_xstrcpy(tac_protocol, lbuf + 9, sizeof(tac_protocol));
         else if(!strncmp(lbuf, "login=", 6))
             tac_xstrcpy(tac_login, lbuf + 6, sizeof(tac_login));
-            
         else if(!strncmp(lbuf, "secret=", 7)) {
             /* no need to complain if too many on this one */
             if(tac_key_no < TAC_PLUS_MAXSERVERS) {
@@ -251,7 +250,7 @@ reload_config(void)
     audisp_tacplus_config(configfile, 0);
 }
 
-/* 
+/*
  * Check to see if we should run under vrf context for management network.
  * If set, configure us to do so.
  * Report errors through syslog, but void, because all we can do is keep
@@ -400,7 +399,7 @@ send_acct_msg(int tac_fd, int type, char *user, char *tty, char *host,
     return retval >= 0 ? 0 : 1;
 }
 
-/* 
+/*
  * Send the accounting record to the TACACS+ server.
  *
  * We have to make a new connection each time, because libtac is single threaded
@@ -495,7 +494,7 @@ get_auval(auparse_state_t *au, const char *field, int *val)
 }
 
 
-/* 
+/*
  * Get the audit record for exec system calls, and send it off to the
  * tacacs+ server.   Lookup the original tacacs username first.
  * This just gets us the starts of commands, not the stop, which would
@@ -596,7 +595,6 @@ static void get_acct_record(auparse_state_t *au, int type)
     else {
         freeloguser = 1;
     }
-        
 
     if(get_field(au, "exe"))
         cmd = (char *)auparse_interpret_field(au);
@@ -637,7 +635,7 @@ static void get_acct_record(auparse_state_t *au, int type)
         }
     }
 
-    /* 
+    /*
      * Put exit status after command name, the argument to exit is in a0
      * for exit syscall; duplicates part of arg loop below
      * This won't ever happen for processes that terminate on signals,
@@ -658,7 +656,7 @@ static void get_acct_record(auparse_state_t *au, int type)
         tlen += llen;
     }
 
-    /* 
+    /*
      * loguser is always set, we bail if not.  For ANOM_ABEND, tty may be
      *  unknown, and in some cases, host may be not be set.
      */
@@ -701,7 +699,7 @@ handle_event(auparse_state_t *au, auparse_cb_event_t cb_event_type,
 		get_acct_record(au, type);
 		break;
 	    default:
-		// for doublechecking dump_whole_record(au); 
+		// for doublechecking dump_whole_record(au);
 		break;
 	}
 	num++;
