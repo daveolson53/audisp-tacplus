@@ -147,13 +147,21 @@ audisp_tacplus_config(char *cfile, int level)
         else if(!strncmp(lbuf, "login=", 6))
             tac_xstrcpy(tac_login, lbuf + 6, sizeof(tac_login));
         else if(!strncmp(lbuf, "secret=", 7)) {
+            int i;
             /* no need to complain if too many on this one */
             if(tac_key_no < TAC_PLUS_MAXSERVERS) {
                 if((tac_srv[tac_key_no].key = strdup(lbuf+7)))
                     tac_key_no++;
                 else
-                    syslog(LOG_ERR, "%s: unabled to copy server secret %s",
+                    syslog(LOG_ERR, "%s: unable to copy server secret %s",
                         __FUNCTION__, lbuf+7);
+            }
+            /* handle case where 'secret=' was given after a 'server='
+             * parameter, fill in the current secret */
+            for(i = tac_srv_no-1; i >= 0; i--) {
+                if (tac_srv[i].key)
+                    continue;
+                tac_srv[i].key = strdup(lbuf+7);
             }
         }
         else if(!strncmp(lbuf, "server=", 7)) {
