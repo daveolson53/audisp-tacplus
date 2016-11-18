@@ -69,14 +69,26 @@ or to override settings in
 for the accounting plugin.
 The following variables are used:
 .br
-.IP debug 16
-Enables debugging
+.IP debug=NUMBER 16
+Enables debugging if non-zero
+.br
+.IP timeout=NUMBER 16
+Enables use of poll() when reading from servers if >= 0.  If not set, or set
+to a negative value, disables use of
+.BR poll (2).
+The value is the number of seconds passed as the 3rd argument to
+.BR poll (2).
 .br
 .IP secret=STRING 16
 shared secret for the TACACS+ server encryption (may be given multiple times)
 .br
 .IP server=IP_ADDR 16
 TACACS+ server IP address (may be given multiple times)
+.br
+The two keywords above can be in any order, but when multiple servers are used,
+they should be listed in pairs (if there are more servers than secrets, and
+at least one secret follows the servers, the most recently listed secret is
+used).
 .br
 .IP acct=all 16
 Send accounting information to all available TACACS+ servers.  Without this

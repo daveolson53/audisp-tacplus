@@ -146,6 +146,13 @@ audisp_tacplus_config(char *cfile, int level)
             tac_xstrcpy(tac_protocol, lbuf + 9, sizeof(tac_protocol));
         else if(!strncmp(lbuf, "login=", 6))
             tac_xstrcpy(tac_login, lbuf + 6, sizeof(tac_login));
+        else if (!strncmp (lbuf, "timeout=", 8)) {
+            tac_timeout = (int)strtoul(lbuf+8, NULL, 0);
+            if (tac_timeout < 0) /* explict neg values disable poll() use */
+                tac_timeout = 0;
+            else /* poll() only used if timeout is explictly set */
+                tac_readtimeout_enable = 1;
+        }
         else if(!strncmp(lbuf, "secret=", 7)) {
             int i;
             /* no need to complain if too many on this one */
@@ -509,7 +516,7 @@ static void get_acct_record(auparse_state_t *au, int type)
      * the NSS library, the username in auser will likely already be the login
      * name.
      */
-    loguser = lookup_logname(NULL, auid, session, &host);
+    loguser = lookup_logname(NULL, auid, session, &host, NULL);
     if(!loguser) {
         char *user = NULL;
 

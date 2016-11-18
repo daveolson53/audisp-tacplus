@@ -1,3 +1,9 @@
+audisp-tacplus (1.0.2-cl3u1) UNRELEASED; urgency=low
+
+  * API change to support new user_homedir config variable.
+
+ -- dev-support <dev-support@cumulusnetworks.com>  Tue, 02 May 2017 11:56:46 -0700
+
 audisp-tacplus (1.0.1-cl3u1) UNRELEASED; urgency=low
 
   * Reimplement VRF support
