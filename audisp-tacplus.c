@@ -358,7 +358,7 @@ main(int argc, char *argv[])
 		 * therefore has the timestamp of the next event.  I can't find
 		 * any parameters to affect that.
 		 */
-		while(fgets_unlocked(tmp, MAX_AUDIT_MESSAGE_LENGTH, stdin) &&
+		while(fgets(tmp, MAX_AUDIT_MESSAGE_LENGTH, stdin) &&
 							hup==0 && stop==0) {
 			auparse_feed(au, tmp, strnlen(tmp,
 						MAX_AUDIT_MESSAGE_LENGTH));
