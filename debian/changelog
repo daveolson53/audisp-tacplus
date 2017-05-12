@@ -1,26 +1,12 @@
-audisp-tacplus (1.0.2-cl3u1) UNRELEASED; urgency=low
+audisp-tacplus (1.0.2) UNRELEASED; urgency=low
 
   * API change to support new user_homedir config variable.
-
- -- dev-support <dev-support@cumulusnetworks.com>  Tue, 02 May 2017 11:56:46 -0700
-
-audisp-tacplus (1.0.1-cl3u1) UNRELEASED; urgency=low
-
-  * Reimplement VRF support
-
- -- dev-support <dev-support@cumulusnetworks.com>  Wed, 08 Mar 2017 13:41:57 -0800
-
-audisp-tacplus (1.0.0-cl3u4) UNRELEASED; urgency=low
-
-  * Close CM-14663: Fix abort() when sent SIGHUP in some cases
-
- -- dev-support <dev-support@cumulusnetworks.com>  Tue, 28 Feb 2017 16:48:12 -0800
-
-audisp-tacplus (1.0.0-cl3u3) UNRELEASED; urgency=low
-
-  * Close CM-12880: When recursing into an included config, don't reset
+  * dropped dependency on libsimple-tacplus, it isn't used any more.
+  * Reimplement VRF support using bind to vrfname
+  * Fix abort() when sent SIGHUP in some cases
+  * When recursing into an included config, don't reset
     secret key index
-  * New Inactive: CM-13348: Fixed to run when management network is in a vrf.
+  * Fixed to run when management network is in a vrf.
     New config file item "vrf" to set vrf name.  Required because audit
     service starts prior to networking, and for networking restart.
   * New Enabled: added config variable "timeout" to limit time attempting to
@@ -29,15 +15,21 @@ audisp-tacplus (1.0.0-cl3u3) UNRELEASED; urgency=low
     libraries can connect to a TACACS+ server without being tacacs aware.
   * Minor corrections to Copyright and licensing
 
- -- dev-support <dev-support@cumulusnetworks.com>  Tue, 29 Nov 2016 17:54:34 -0800
+ -- dev-support <dev-support@cumulusnetworks.com>  Mon, 22 May 2017 15:11:25 -0700
 
-audisp-tacplus (1.0.0-cl3eau2) RELEASED; urgency=low
+audisp-tacplus (1.0.1) UNRELEASED; urgency=low
 
+  *  When recursing into an included config, don't reset
+     secret key index
+  *  Fixed to run when management network is in a vrf for Cumulus
+     Linux (not protected by ifdefs, triggered by non-default config).
+	 New config file item "vrf" to set vrf name.  Documented configuration
+	 file in man page
   * Regenerate audit rules before restarting auditd on removal
 
- -- dev-support <dev-support@cumulusnetworks.com>  Thu, 25 Aug 2016 10:31:13 -0700
+ -- Dave Olson <olson@cumulusnetworks.com>  Mon, 07 Nov 2016 10:16:58 -0800
 
-audisp-tacplus (1.0.0-cl3eau1) RELEASED; urgency=low
+audisp-tacplus (1.0.0) UNRELEASED; urgency=low
 
   * Initial release of audisp plugin to do TACACS+ accounting.
     Accounting is done on the login_auid and sessionid fields.

@@ -297,6 +297,7 @@ main(int argc, char *argv[])
 	do {
 		/* Load configuration */
 		if(hup) {
+			syslog(LOG_NOTICE, "%s re-initializing configuration", progname);
 			reload_config();
 		}
 
