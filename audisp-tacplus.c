@@ -238,27 +238,29 @@ audisp_tacplus_config(char *cfile, int level)
 static void
 reload_config(void)
 {
-    int i;
+    int i, nservers;
 
     hup = 0;
 
     /*  reset the config variables that we use, freeing memory where needed */
+    nservers = tac_srv_no;
+    tac_srv_no = 0;
+    tac_key_no = 0;
     vrfname[0] = '\0';
     tac_service[0] = '\0';
     tac_protocol[0] = '\0';
     tac_login[0] = '\0';
     debug = 0;
     acct_all = 0;
+    tac_timeout = 0;
 
-    for(i = 0; i < tac_srv_no; i++) {
+    for(i = 0; i < nservers; i++) {
         if(tac_srv[i].key) {
             free(tac_srv[i].key);
             tac_srv[i].key = NULL;
         }
         tac_srv[i].addr = NULL;
     }
-    tac_srv_no = 0;
-    tac_key_no = 0;
 
     connected_ok = 0; /*  reset connected state (for possible vrf) */
 
