@@ -1,16 +1,4 @@
-audisp-tacplus (1.0.1) UNRELEASED; urgency=low
-
-  *  CM-12880: When recursing into an included config, don't reset
-     secret key index
-  *  CM-13348: Fixed to run when management network is in a vrf for Cumulus
-     Linux (not protected by ifdefs, triggered by non-default config).
-	 New config file item "vrf" to set vrf name.  Documented configuration
-	 file in man page
-  * Regenerate audit rules before restarting auditd on removal
-
- -- Dave Olson <olson@cumulusnetworks.com>  Mon, 07 Nov 2016 10:16:58 -0800
-
-audisp-tacplus (1.0.0) UNRELEASED; urgency=low
+audisp-tacplus (1.0.0-cl3u1) unstable; urgency=low
 
   * Initial release of audisp plugin to do TACACS+ accounting.
     Accounting is done on the login_auid and sessionid fields.
