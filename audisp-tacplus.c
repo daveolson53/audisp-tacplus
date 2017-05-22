@@ -1,5 +1,5 @@
 /*
- * Copyright 2014, 2015, 2016 Cumulus Networks, Inc.  All rights reserved.
+ * Copyright 2014, 2015, 2016, 2017 Cumulus Networks, Inc.  All rights reserved.
  *   Based on audisp-example.c by Steve Grubb <sgrubb@redhat.com>
  *     Copyright 2009 Red Hat Inc., Durham, North Carolina.
  *     All Rights Reserved.
@@ -238,85 +238,33 @@ audisp_tacplus_config(char *cfile, int level)
 static void
 reload_config(void)
 {
-    int i;
+    int i, nservers;
 
     hup = 0;
 
     /*  reset the config variables that we use, freeing memory where needed */
+    nservers = tac_srv_no;
+    tac_srv_no = 0;
+    tac_key_no = 0;
     vrfname[0] = '\0';
     tac_service[0] = '\0';
     tac_protocol[0] = '\0';
     tac_login[0] = '\0';
     debug = 0;
     acct_all = 0;
+    tac_timeout = 0;
 
-    for(i = 0; i < tac_srv_no; i++) {
+    for(i = 0; i < nservers; i++) {
         if(tac_srv[i].key) {
             free(tac_srv[i].key);
             tac_srv[i].key = NULL;
         }
         tac_srv[i].addr = NULL;
     }
-    tac_srv_no = 0;
-    tac_key_no = 0;
 
     connected_ok = 0; /*  reset connected state (for possible vrf) */
 
     audisp_tacplus_config(configfile, 0);
-}
-
-/* 
- * Check to see if we should run under vrf context for management network.
- * If set, configure us to do so.
- * Report errors through syslog, but void, because all we can do is keep
- * going and hope things work out, or the logged error messages help
- * the user debug the problem.
- */
-static void
-set_vrf(void)
-{
-    pid_t pid, childpid;
-    int ret, status = -1;
-    char mypidstr[16];
-
-    if(!*vrfname)
-        return;
-    if(debug)
-        syslog(LOG_NOTICE, "%s: Enabling vrf: %s", progname, vrfname);
-    pid = getpid();
-    if (pid == (pid_t)-1) {
-        syslog(LOG_ERR, "%s: Unable to get my PID to set vrf %s: %m", progname,
-            vrfname);
-        return;
-    }
-    snprintf(mypidstr, sizeof mypidstr, "%d", pid);
-    childpid = fork();
-    if (childpid == (pid_t)-1) {
-        syslog(LOG_ERR, "%s: Unable to fork to set vrf %s: %m", progname,
-            vrfname);
-        return;
-    }
-    else if(!childpid) {
-        execl("/usr/bin/vrf", "vrf", "task", "set", vrfname, mypidstr,
-            (char *)NULL);
-        /*  just in case the command moves */
-        execlp("vrf", "vrf", "task", "set", vrfname, mypidstr, (char *)NULL);
-        syslog(LOG_ERR, "%s: Unable to exec vrf command to set vrf %s: %m",
-            progname, vrfname);
-        exit(1);
-    }
-    ret = waitpid(childpid, &status, 0);
-    if(ret == -1)
-        syslog(LOG_ERR, "%s: Failed to wait for exec'ed vrf command: %m",
-            progname);
-    else if(ret && ret != childpid) {
-        syslog(LOG_WARNING, "%s: Wait for exec'ed vrf command pid %d unexpectedly"
-            " returned %d", progname, childpid, ret);
-        (void)waitpid(childpid, &status, WNOHANG); /*  give it one more chance */
-    }
-    if (status != -1 && status)
-        syslog(LOG_WARNING, "%s: exec'ed vrf command exited with status 0x%x",
-            progname, status);
 }
 
 int
@@ -349,6 +297,7 @@ main(int argc, char *argv[])
 	do {
 		/* Load configuration */
 		if(hup) {
+			syslog(LOG_NOTICE, "%s re-initializing configuration", progname);
 			reload_config();
 		}
 
@@ -358,7 +307,7 @@ main(int argc, char *argv[])
 		 * therefore has the timestamp of the next event.  I can't find
 		 * any parameters to affect that.
 		 */
-		while(fgets_unlocked(tmp, MAX_AUDIT_MESSAGE_LENGTH, stdin) &&
+		while(fgets(tmp, MAX_AUDIT_MESSAGE_LENGTH, stdin) &&
 							hup==0 && stop==0) {
 			auparse_feed(au, tmp, strnlen(tmp,
 						MAX_AUDIT_MESSAGE_LENGTH));
@@ -425,25 +374,11 @@ static void
 send_tacacs_acct(char *user, char *tty, char *host, char *cmdmsg, int type,
     uint16_t task_id)
 {
-    int retval, srv_i, srv_fd, anyok = 0, tries = 0;
+    int retval, srv_i, srv_fd;
 
-    /*
-     *  We start well before networking, so if in a vrf, we may not be
-     *  able to set it when we first start up.  In theory, we won't be
-     *  doing any accounting until a TACACS-authenticated user logs in
-     *  after networking is up, so defer setting up the vrf until we
-     *  try to connect to a TACACS+ server.  Just in case, keep trying
-     *  until we have a successful connection, just in case.
-     *  We also need to redo this if we were SIGHUP'ed to re-read the
-     *  config.
-     */
-retry:
-    if(!connected_ok)
-        set_vrf();
-    tries++;
     for(srv_i = 0; srv_i < tac_srv_no; srv_i++) {
         srv_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key,
-            NULL);
+            NULL, vrfname[0]?vrfname:NULL);
         if(srv_fd < 0) {
             syslog(LOG_WARNING, "connection to %s failed (%d) to send"
                 " accounting record: %m",
@@ -457,15 +392,9 @@ retry:
         close(srv_fd);
         if(!retval) {
             connected_ok = 1;
-            anyok++;
             if(!acct_all)
                 break; /* only send to first responding server */
         }
-    }
-    if (!anyok && connected_ok && vrfname[0] && tries == 1) {
-        syslog(LOG_WARNING, "Lost network connection, reinitializing vrf");
-        connected_ok = 0;
-        goto retry;
     }
 }
 
@@ -590,7 +519,7 @@ static void get_acct_record(auparse_state_t *au, int type)
      * the NSS library, the username in auser will likely already be the login
      * name.
      */
-    loguser = lookup_logname(NULL, auid, session, &host);
+    loguser = lookup_logname(NULL, auid, session, &host, NULL);
     if(!loguser) {
         char *user = NULL;
 
@@ -650,7 +579,7 @@ static void get_acct_record(auparse_state_t *au, int type)
         }
     }
 
-    /* 
+    /*
      * Put exit status after command name, the argument to exit is in a0
      * for exit syscall; duplicates part of arg loop below
      * This won't ever happen for processes that terminate on signals,
@@ -671,7 +600,7 @@ static void get_acct_record(auparse_state_t *au, int type)
         tlen += llen;
     }
 
-    /* 
+    /*
      * loguser is always set, we bail if not.  For ANOM_ABEND, tty may be
      *  unknown, and in some cases, host may be not be set.
      */
@@ -714,7 +643,7 @@ handle_event(auparse_state_t *au, auparse_cb_event_t cb_event_type,
 		get_acct_record(au, type);
 		break;
 	    default:
-		// for doublechecking dump_whole_record(au); 
+		// for doublechecking dump_whole_record(au);
 		break;
 	}
 	num++;
