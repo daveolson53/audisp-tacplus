@@ -14,8 +14,9 @@ audisp-tacplus (1.0.2) UNRELEASED; urgency=low
   * Fixed issues with ordering of multiple servers and secrets in config files.
     libraries can connect to a TACACS+ server without being tacacs aware.
   * Minor corrections to Copyright and licensing
+  * When re-using a secret key for multiple servers, strdup, don't copy; fix segv
 
- -- dev-support <dev-support@cumulusnetworks.com>  Mon, 22 May 2017 15:11:25 -0700
+ -- Dave Olson <olson@cumulusnetworks.com>  Thu, 25 May 2017 12:40:15 -0700
 
 audisp-tacplus (1.0.1) UNRELEASED; urgency=low
 
